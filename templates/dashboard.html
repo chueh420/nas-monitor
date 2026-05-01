@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="300">
+  <title>NAS 監控儀表板</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
+    .header { background: #1a1a2e; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.3rem; }
+    .header .meta { font-size: 0.85rem; color: #aaa; }
+    .badge { background: #e74c3c; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; margin-left: 0.5rem; }
+    .container { padding: 1.5rem 2rem; }
+    .stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: white; border-radius: 10px; padding: 1rem 1.5rem; flex: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-card .num { font-size: 2rem; font-weight: 700; }
+    .stat-card .label { font-size: 0.85rem; color: #888; }
+    .green { color: #27ae60; }
+    .red { color: #e74c3c; }
+    .orange { color: #f39c12; }
+    table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-collapse: collapse; overflow: hidden; }
+    th { background: #1a1a2e; color: white; padding: 0.8rem 1rem; text-align: left; font-size: 0.85rem; }
+    td { padding: 0.8rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .dot-online { background: #27ae60; }
+    .dot-offline { background: #e74c3c; }
+    .dot-warning { background: #f39c12; }
+    .dot-failed { background: #e74c3c; }
+    .dot-unknown { background: #95a5a6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🖥️ NAS 監控儀表板
+      {% if unresolved_alerts > 0 %}
+      <span class="badge">{{ unresolved_alerts }} 警報</span>
+      {% endif %}
+    </h1>
+    <div class="meta">更新時間：{{ now }}（每5分鐘自動重整）</div>
+  </div>
+
+  <div class="container">
+    {% set online = clients | selectattr("offline", "equalto", false) | list %}
+    {% set offline = clients | selectattr("offline", "equalto", true) | list %}
+    <div class="stats">
+      <div class="stat-card"><div class="num">{{ clients | length }}</div><div class="label">總客戶數</div></div>
+      <div class="stat-card"><div class="num green">{{ online | length }}</div><div class="label">在線</div></div>
+      <div class="stat-card"><div class="num red">{{ offline | length }}</div><div class="label">離線</div></div>
+      <div class="stat-card"><div class="num orange">{{ unresolved_alerts }}</div><div class="label">未解決警報</div></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>客戶名稱</th>
+          <th>類型</th>
+          <th>狀態</th>
+          <th>最後回報</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clients %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.nas_type | upper }}</td>
+          <td>
+            {% if c.offline %}
+              <span class="status-dot dot-offline"></span>離線
+            {% elif c.status == "ok" %}
+              <span class="status-dot dot-online"></span>正常
+            {% elif c.status == "failed" %}
+              <span class="status-dot dot-failed"></span>備份失敗
+            {% elif c.status == "warning" %}
+              <span class="status-dot dot-warning"></span>警告
+            {% else %}
+              <span class="status-dot dot-unknown"></span>未知
+            {% endif %}
+          </td>
+          <td>{{ c.last_seen }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#aaa;padding:2rem">尚無客戶資料</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
