@@ -100,12 +100,17 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     status_list = []
     for c in clients:
         offline = c.last_seen is None or (now - c.last_seen) > timedelta(minutes=30)
+        latest = db.query(NASReport).filter(NASReport.client_id == c.id).order_by(NASReport.timestamp.desc()).first()
         status_list.append({
             "name": c.name,
             "nas_type": c.nas_type,
             "last_seen": c.last_seen.strftime("%Y-%m-%d %H:%M") if c.last_seen else "從未回報",
             "status": "offline" if offline else c.last_status,
             "offline": offline,
+            "cpu": round(latest.cpu_usage, 1) if latest else "-",
+            "mem": round(latest.memory_usage, 1) if latest else "-",
+            "disk": round(latest.disk_usage, 1) if latest else "-",
+            "backup": latest.backup_status if latest else "unknown",
         })
     unresolved = db.query(Alert).filter(Alert.resolved == False).count()
     return templates.TemplateResponse(request, "dashboard.html", {

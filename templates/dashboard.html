@@ -22,7 +22,7 @@
     .orange { color: #f39c12; }
     table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-collapse: collapse; overflow: hidden; }
     th { background: #1a1a2e; color: white; padding: 0.8rem 1rem; text-align: left; font-size: 0.85rem; }
-    td { padding: 0.8rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+    td { padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fafafa; }
     .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
@@ -31,11 +31,18 @@
     .dot-warning { background: #f39c12; }
     .dot-failed { background: #e74c3c; }
     .dot-unknown { background: #95a5a6; }
+    .bar-wrap { display: flex; align-items: center; gap: 6px; }
+    .bar { height: 8px; border-radius: 4px; background: #eee; width: 80px; }
+    .bar-fill { height: 100%; border-radius: 4px; }
+    .bar-ok { background: #27ae60; }
+    .bar-warn { background: #f39c12; }
+    .bar-danger { background: #e74c3c; }
+    .pct { font-size: 0.85rem; min-width: 38px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>🖥️ NAS 監控儀表板
+    <h1>&#128421; NAS 監控儀表板
       {% if unresolved_alerts > 0 %}
       <span class="badge">{{ unresolved_alerts }} 警報</span>
       {% endif %}
@@ -59,6 +66,10 @@
           <th>客戶名稱</th>
           <th>類型</th>
           <th>狀態</th>
+          <th>CPU</th>
+          <th>記憶體</th>
+          <th>硬碟</th>
+          <th>備份</th>
           <th>最後回報</th>
         </tr>
       </thead>
@@ -80,10 +91,40 @@
               <span class="status-dot dot-unknown"></span>未知
             {% endif %}
           </td>
+          <td>
+            {% if c.cpu != "-" %}
+            <div class="bar-wrap">
+              <div class="bar"><div class="bar-fill {% if c.cpu >= 90 %}bar-danger{% elif c.cpu >= 70 %}bar-warn{% else %}bar-ok{% endif %}" style="width:{{ c.cpu }}%"></div></div>
+              <span class="pct">{{ c.cpu }}%</span>
+            </div>
+            {% else %}-{% endif %}
+          </td>
+          <td>
+            {% if c.mem != "-" %}
+            <div class="bar-wrap">
+              <div class="bar"><div class="bar-fill {% if c.mem >= 90 %}bar-danger{% elif c.mem >= 70 %}bar-warn{% else %}bar-ok{% endif %}" style="width:{{ c.mem }}%"></div></div>
+              <span class="pct">{{ c.mem }}%</span>
+            </div>
+            {% else %}-{% endif %}
+          </td>
+          <td>
+            {% if c.disk != "-" %}
+            <div class="bar-wrap">
+              <div class="bar"><div class="bar-fill {% if c.disk >= 90 %}bar-danger{% elif c.disk >= 85 %}bar-warn{% else %}bar-ok{% endif %}" style="width:{{ c.disk }}%"></div></div>
+              <span class="pct">{{ c.disk }}%</span>
+            </div>
+            {% else %}-{% endif %}
+          </td>
+          <td>
+            {% if c.backup == "ok" %}<span class="green">正常</span>
+            {% elif c.backup == "failed" %}<span class="red">失敗</span>
+            {% elif c.backup == "warning" %}<span class="orange">警告</span>
+            {% else %}<span style="color:#aaa">未知</span>{% endif %}
+          </td>
           <td>{{ c.last_seen }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" style="text-align:center;color:#aaa;padding:2rem">尚無客戶資料</td></tr>
+        <tr><td colspan="8" style="text-align:center;color:#aaa;padding:2rem">尚無客戶資料</td></tr>
         {% endfor %}
       </tbody>
     </table>
