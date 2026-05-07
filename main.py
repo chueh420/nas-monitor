@@ -108,8 +108,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "offline": offline,
         })
     unresolved = db.query(Alert).filter(Alert.resolved == False).count()
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "dashboard.html", {
         "clients": status_list,
         "unresolved_alerts": unresolved,
         "now": now.strftime("%Y-%m-%d %H:%M"),
